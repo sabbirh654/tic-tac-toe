@@ -3,7 +3,7 @@ const GameBoard = (function () {
     const columns = 3;
     const board = [];
 
-    const createBoard = function () {
+    const reset = function () {
         for (let i = 0; i < rows; i++) {
             board[i] = [];
             for (let col = 0; col < columns; col++) {
@@ -14,20 +14,12 @@ const GameBoard = (function () {
 
     const getBoard = () => board;
 
-    const isValidCell = (row, col) => {
-        return row >= 0 && row < 3 && col >= 0 && col < 3;
-    }
-
     const isCellEmpty = (row, col) => board[row][col] === null;
 
     const updateBoard = function (row, col, value) {
-        if (isValidCell(row, col) && isCellEmpty(row, col)) {
+        if (isCellEmpty(row, col)) {
             board[row][col] = value;
         }
-    }
-
-    const displayBoard = function () {
-        console.log(board);
     }
 
     const isNoEmptyCellInBoard = function () {
@@ -42,13 +34,13 @@ const GameBoard = (function () {
         return true;
     }
 
-    createBoard();
+    reset();
 
     return {
         getBoard, updateBoard,
-        isValidCell, isCellEmpty,
-        displayBoard,
-        isNoEmptyCellInBoard
+        isCellEmpty,
+        isNoEmptyCellInBoard,
+        reset
     };
 
 })();
@@ -60,9 +52,9 @@ const Player = function (name, marker) {
     return { name, marker };
 }
 
-const PlayingState = (function () {
-    const firstPlayer = Player('player1', 'X');
-    const secondPlayer = Player('player2', 'O');
+const GameState = (function () {
+    const firstPlayer = Player('player-one', 'X');
+    const secondPlayer = Player('player-two', 'O');
     let currentPlayer = firstPlayer;
     let isWin = false;
     let isDraw = false;
@@ -111,7 +103,7 @@ const PlayingState = (function () {
         return true;
     }
 
-    const checkForWinner = function (row, col) {
+    const checkWinCondition = function (row, col) {
 
         if (isMatchRow(row, col) || isMatchColumn(row, col)) {
             return true;
@@ -154,7 +146,22 @@ const PlayingState = (function () {
         isDraw = state;
     }
 
-    return { getCurrentPlayer, switchPlayer, checkForWinner, getWinState, setWinState, getDrawState, setDrawState};
+    const reset = function () {
+        currentPlayer = firstPlayer;
+        isWin = false;
+        isDraw = false;
+    }
+
+    return {
+        getCurrentPlayer,
+        switchPlayer,
+        checkWinCondition,
+        getWinState,
+        setWinState,
+        getDrawState,
+        setDrawState,
+        reset
+    };
 })();
 
 
@@ -165,9 +172,9 @@ const GameController = (function () {
 
     const playRound = function (row, col) {
 
-        winState = PlayingState.getWinState();
-        drawState = PlayingState.getDrawState();
-        
+        winState = GameState.getWinState();
+        drawState = GameState.getDrawState();
+
         if (!GameBoard.isCellEmpty(row, col)) {
             return;
         }
@@ -175,24 +182,21 @@ const GameController = (function () {
             return;
         }
 
-        const currentPlayer = PlayingState.getCurrentPlayer();
+        const currentPlayer = GameState.getCurrentPlayer();
         GameBoard.updateBoard(row, col, currentPlayer.marker);
 
-        const isWin = PlayingState.checkForWinner(row, col);
-        PlayingState.setWinState(isWin);
-        console.log(PlayingState.getWinState());
+        const isWin = GameState.checkWinCondition(row, col);
+        GameState.setWinState(isWin);
 
-        if(!isWin) {
-            PlayingState.switchPlayer();
+        if (!isWin) {
+            GameState.switchPlayer();
         }
 
         isDraw = !isWin && GameBoard.isNoEmptyCellInBoard();
-        PlayingState.setDrawState(isDraw);
+        GameState.setDrawState(isDraw);
     }
 
-    const getWinState = () => winState;
-    const getDrawState = () => drawState;
-    return { playRound, getWinState, getDrawState };
+    return {playRound};
 })();
 
 const ScreenController = (function () {
@@ -220,33 +224,56 @@ const ScreenController = (function () {
         }
     }
 
-    const updateScreen = function (row, col) {
+    const updateScreen = function () {
         //update game board
         const board = GameBoard.getBoard();
-        const cell = document.querySelector(`[id='${row * 3 + col}']`);
-        cell.textContent = board[row][col];
+
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                const cell = document.querySelector(`[id='${row * 3 + col}']`);
+                if (cell !== null) {
+                    cell.textContent = board[row][col];
+                }
+            }
+        }
+
+        //update player info
+        const playerElement = document.querySelector('.player');
+
+        if (GameState.getWinState()) {
+            playerElement.textContent = `${GameState.getCurrentPlayer().name} wins!`;
+        }
+
+        else if (GameState.getDrawState()) {
+            playerElement.textContent = 'Game is draw!';
+        }
+        else {
+            playerElement.textContent = `${GameState.getCurrentPlayer().name}'s turn!`;
+        }
     }
 
     const cellClickHandler = function (e) {
 
-        if (GameController.getWinState() || GameController.getDrawState()) {
+        if (GameState.getWinState() || GameState.getDrawState()) {
             return;
         }
         const cellId = e.target.id;
         const row = Math.floor(+cellId / 3);
         const col = +cellId % 3;
         GameController.playRound(row, col);
-        updateScreen(row, col);
-
-        if(PlayingState.getWinState()) {
-            console.log(`${PlayingState.getCurrentPlayer().name} wins!`);
-        }
-
-        if(PlayingState.getDrawState()) {
-            console.log('Draw')
-        }
+        updateScreen();
     }
 
+    const restartButton = document.querySelector('.restart-button');
+
+    const restartButtonClickEventHandler = function () {
+        GameBoard.reset();
+        GameState.reset();
+        updateScreen();
+    }
+
+    restartButton.addEventListener('click', restartButtonClickEventHandler);
     board.addEventListener('click', cellClickHandler);
     initializeBoardUI();
+    updateScreen();
 })();

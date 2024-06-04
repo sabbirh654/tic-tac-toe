@@ -1,15 +1,16 @@
 
 body {
-    font-family:Arial, Helvetica, sans-serif
+    font-family: 'Courier New', Courier, monospace;
+    padding: 10px;
 }
 .container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(3, 1fr);
-    width: 400px;
-    height: 400px;
+    width: 375px;
+    height: 350px;
     margin: auto auto;
-    padding: 50px;
+    padding: 10px;
 }
 
 .box {
@@ -21,4 +22,36 @@ body {
     display: grid;
     align-items: center;
     justify-content: center;
+}
+
+.player {
+    font-size: 36px;
+    font-weight: bold;
+    border: 2px solid #3f3f46;
+    color: #171717;
+    text-align: center;
+    width: 35vw;
+    margin: 10px auto;
+    padding: 12px;
+}
+
+.restart-button {
+    display: block;
+    width: 200px;
+    height: 50px;
+    margin: 10px auto;
+    border: none;
+    border-radius: 4px;
+    font-size: 24px;
+    background-color: #f5f5f5;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+}
+
+button:hover {
+    background-color: #e5e7eb;
+}
+
+button:active {
+    background-color: #f3f4f6;
 }
